@@ -5,7 +5,6 @@ intro: 'Follow these best practices to improve the security and performance of y
 versions:
   fpt: '*'
   ghes: '*'
-  ghae: '*'
   ghec: '*'
 topics:
   - GitHub Apps
@@ -23,7 +22,7 @@ When your {% data variables.product.prodname_github_app %} creates an installati
 
 Subscribe to webhook events instead of polling the API for data. This will help your {% data variables.product.prodname_github_app %} stay within the API rate limit. For more information, see "[AUTOTITLE](/apps/creating-github-apps/creating-github-apps/using-webhooks-with-github-apps)" and "[AUTOTITLE](/apps/creating-github-apps/guides/building-a-github-app-that-responds-to-webhook-events)."
 
-Consider using conditional requests to help you stay within the rate limit. For more information about conditional requests, see "[AUTOTITLE](/rest/overview/resources-in-the-rest-api#conditional-requests)."
+Consider using conditional requests to help you stay within the rate limit. For more information about conditional requests, see "[AUTOTITLE](/rest/guides/best-practices-for-using-the-rest-api)."
 
 If possible, consider using consolidated GraphQL queries instead of REST API requests to help you stay within rate limits. For more information, see "[AUTOTITLE](/rest/overview/about-githubs-apis)" and "[AUTOTITLE](/graphql)."
 
@@ -65,7 +64,7 @@ If your app is a native client, client-side app, or runs on a user device (as op
 
 ## Use the appropriate token type
 
-{% data variables.product.prodname_github_app %}s can generate installation access tokens or user access tokens in order to make authenticated API requests.
+{% data variables.product.prodname_github_apps %} can generate installation access tokens or user access tokens in order to make authenticated API requests.
 
 Installation access tokens will attribute activity to your app. These are useful for automations that act independently of users.
 
@@ -73,23 +72,33 @@ User access tokens will attribute activity to a user and to your app. These are 
 
 An installation access token is restricted based on the {% data variables.product.prodname_github_app %}'s permissions and access. A user access token is restricted based on both the {% data variables.product.prodname_github_app %}'s permission and access and the user's permission and access. Therefore, if your {% data variables.product.prodname_github_app %} takes an action on behalf of a user, it should always use a user access token instead of an installation access token. Otherwise, your app might allow a user to see or do things that they shouldn't be able to see or do.
 
+Your app should never use a {% data variables.product.pat_generic %} or {% data variables.product.company_short %} password to authenticate.
+
 ## Validate organization access for every new authentication
 
 When you use a user access token, you should track which organizations the token is authorized for. If an organization uses SAML SSO and a user has not performed SAML SSO, the user access token should not have access to that organization. You can use the `GET /user/installations` REST API endpoint to verify which organizations a user access token has access to. If the user is not authorized to access an organization, you should reject their access until they perform SAML SSO. For more information, see "[AUTOTITLE](/rest/apps/installations#list-app-installations-accessible-to-the-user-access-token)."
 
 ## Expire tokens
 
-{% data variables.product.company_short %} strongly encourages you to use user access tokens that expire. If you previously opted out of using user access tokens that expire but want to reenable this feature, see "[AUTOTITLE](/apps/maintaining-github-apps/activating-optional-features-for-github-apps)."
+{% data variables.product.company_short %} strongly encourages you to use user access tokens that expire. If you previously opted out of using user access tokens that expire but want to re-enable this feature, see "[AUTOTITLE](/apps/maintaining-github-apps/activating-optional-features-for-github-apps)."
 
 Installation access tokens expire after one hour, expiring user access tokens expire after eight hours, and refresh tokens expire after six months. However, you can also revoke tokens as soon as you no longer need them. For more information, see "[AUTOTITLE](/rest/apps/installations#revoke-an-installation-access-token)" to revoke an installation access token and "[AUTOTITLE](/rest/apps/oauth-applications#delete-an-app-token)" to revoke a user access token.
 
-## Make a plan for rotating credentials
+## Cache tokens
+
+User access tokens and installation access tokens are meant to be used until they expire. You should cache tokens that you create. Before you create a new token, check your cache to see if you already have a valid token. Reusing tokens will make your app faster since it will make fewer requests to generate tokens.
+
+## Make a plan for handling security breaches
 
 You should have a plan in place so that you can handle any security breaches in a timely manner.
 
 In the event that your app's private key or secret is compromised, you will need to generate a new key or secret, update your app to use the new key or secret, and delete your old key or secret.
 
-In the event that installation access tokens, user access tokens, or refresh tokens are compromised, you should immediately revoke these tokens. For more information, see "[AUTOTITLE](/rest/apps/installations#revoke-an-installation-access-token)."
+In the event that installation access tokens, user access tokens, or refresh tokens are compromised, you should immediately revoke these tokens. For more information, see "[AUTOTITLE](/rest/apps/installations#revoke-an-installation-access-token)" to revoke an installation access token and "[AUTOTITLE](/rest/apps/oauth-applications#delete-an-app-token)" to revoke a user access token.
+
+## Conduct regular vulnerability scans
+
+{% data reusables.apps.app-scans %}
 
 ## Choose an appropriate environment
 
@@ -111,11 +120,23 @@ When you add repository or organization permissions to your {% data variables.pr
 
 When you update permissions, you should consider making your app backwards compatible to give your users time to accept the new permissions. You can use the [installation webhook with the `new_permissions_accepted` action property](/webhooks-and-events/webhooks/webhook-events-and-payloads?actionType=new_permissions_accepted#installation) to learn when users accept new permissions for your app.
 
-{% ifversion fpt or ghec %}
+## Use services in a secure manner
+
+{% data reusables.apps.app-services %}
+
+## Add logging and monitoring
+
+{% data reusables.apps.apps-logging %}
+
+## Enable data deletion
+
+If your {% data variables.product.prodname_github_app %} is available to other users or organizations, you should give users and organization owners a way to delete their data. Users should not need to email or call a support person in order to delete their data.
 
 ## Further reading
 
+{% ifversion fpt or ghec %}
 - "[AUTOTITLE](/apps/publishing-apps-to-github-marketplace/creating-apps-for-github-marketplace/security-best-practices-for-apps)"
 - "[AUTOTITLE](/apps/publishing-apps-to-github-marketplace/creating-apps-for-github-marketplace/customer-experience-best-practices-for-apps)"
-
 {% endif %}
+- "[AUTOTITLE](/webhooks/using-webhooks/best-practices-for-using-webhooks)"
+- "[AUTOTITLE](/rest/guides/best-practices-for-integrators)"
